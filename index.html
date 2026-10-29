@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ventanilla Digital de Adquisiciones, ECOSUR Tapachula</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --hoja:#E9EFE4;      /* fondo: neblina de hoja */
+    --hoja-2:#DCE7D5;
+    --dosel:#16332B;     /* tinta: dosel profundo */
+    --jade:#2E7558;      /* acción secundaria */
+    --cacao:#D99A1E;     /* acento: mazorca de cacao */
+    --cacao-osc:#9C6A07;
+    --papel:#F7FAF4;     /* superficies */
+    --linea:#B9CDB3;
+    --suave:#4D6A5F;
+    --error:#A3361F;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--hoja);
+    color:var(--dosel);
+    font:400 1.0625rem/1.6 "Atkinson Hyperlegible",system-ui,sans-serif;
+    display:flex;flex-direction:column;min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  /* curvas de nivel de fondo (Tacaná) */
+  .relieve{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.55}
+  .relieve svg{width:100%;height:100%}
+
+  header{position:relative;z-index:2;display:flex;align-items:center;gap:.75rem;
+    padding:1rem clamp(1rem,4vw,2rem)}
+  .marca{width:38px;height:38px;flex:none}
+  .titulo{line-height:1.15}
+  .titulo b{font:700 1.02rem "Bricolage Grotesque",sans-serif;display:block}
+  .titulo span{font-size:.86rem;color:var(--suave)}
+  .voz-toggle{margin-left:auto;display:flex;align-items:center;gap:.5rem;
+    background:transparent;border:1.5px solid var(--linea);color:var(--dosel);
+    border-radius:999px;padding:.4rem .85rem;font:inherit;font-size:.88rem;cursor:pointer}
+  .voz-toggle[aria-pressed="true"]{background:var(--dosel);color:var(--papel);border-color:var(--dosel)}
+  .voz-toggle svg{width:18px;height:18px}
+
+  main{position:relative;z-index:1;flex:1;width:100%;max-width:760px;margin:0 auto;
+    padding:0 1rem 9.5rem;display:flex;flex-direction:column}
+
+  /* ---------- Portada ---------- */
+  .portada{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;padding:1rem 0 1rem}
+  .portada h1{font:800 clamp(2rem,6.4vw,3.35rem)/1.02 "Bricolage Grotesque",sans-serif;
+    letter-spacing:-.025em;margin:1.1rem 0 .7rem;max-width:20ch}
+  .portada p{margin:0 auto;max-width:44ch;color:var(--suave)}
+  .sugerencias{display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem;margin-top:1.3rem;width:100%}
+  @media (max-width:520px){.sugerencias{flex-wrap:nowrap;overflow-x:auto;justify-content:flex-start;width:calc(100% + 2rem);margin-left:-1rem;padding:0 1rem .3rem;scrollbar-width:none}.sugerencias button{flex:none;max-width:78vw}.portada h1{font-size:2rem}}
+  .sugerencias button{font:inherit;font-size:.88rem;background:var(--papel);color:var(--dosel);
+    border:1.5px solid var(--linea);border-radius:14px;padding:.5rem .8rem;cursor:pointer;text-align:left}
+  .sugerencias button:hover{border-color:var(--jade)}
+
+  /* ---------- El orbe de voz: anillos de curva de nivel ---------- */
+  .orbe{position:relative;width:min(190px,44vw);aspect-ratio:1;border:0;padding:0;background:none;
+    cursor:pointer;border-radius:50%;color:var(--dosel)}
+  .orbe svg.anillos{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+  .orbe .anillos path{fill:none;stroke:var(--jade);stroke-width:1.4;opacity:.75;transform-origin:50% 50%}
+  .orbe .nucleo{position:absolute;inset:31%;border-radius:50%;background:var(--cacao);
+    display:grid;place-items:center;box-shadow:0 10px 30px -8px rgba(156,106,7,.55);transition:transform .2s}
+  .orbe:hover .nucleo{transform:scale(1.04)}
+  .orbe .nucleo svg{width:42%;height:42%;color:var(--dosel)}
+  .orbe-etiqueta{margin-top:.2rem;font-size:.92rem;color:var(--suave);min-height:1.5em}
+  .escuchando .anillos path{animation:latido 1.6s ease-in-out infinite}
+  .escuchando .anillos path:nth-child(2){animation-delay:.12s}
+  .escuchando .anillos path:nth-child(3){animation-delay:.24s}
+  .escuchando .anillos path:nth-child(4){animation-delay:.36s}
+  .escuchando .anillos path:nth-child(5){animation-delay:.48s}
+  .escuchando .nucleo{background:var(--dosel)}
+  .escuchando .nucleo svg{color:var(--cacao)}
+  @keyframes latido{0%,100%{transform:scale(1);opacity:.75}50%{transform:scale(1.07);opacity:1;stroke:var(--cacao-osc)}}
+
+  /* ---------- Conversación ---------- */
+  .conversacion{display:none;flex-direction:column;gap:1.1rem;padding-top:1rem}
+  .con-chat .portada{display:none}
+  .con-chat .conversacion{display:flex}
+  .msg{max-width:92%;animation:entra .25s ease-out}
+  @keyframes entra{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .msg.usuario{align-self:flex-end;background:var(--dosel);color:var(--papel);
+    padding:.7rem 1rem;border-radius:18px 18px 4px 18px}
+  .msg.asistente{align-self:flex-start;background:var(--papel);border:1.5px solid var(--linea);
+    padding:1rem 1.15rem;border-radius:4px 18px 18px 18px;max-width:100%}
+  .msg.asistente p{margin:.15rem 0 .6rem}
+  .msg.asistente p:last-child{margin-bottom:0}
+  .msg.asistente ul,.msg.asistente ol{margin:.3rem 0 .7rem;padding-left:1.3rem}
+  .msg.asistente li{margin:.2rem 0}
+  .msg.asistente strong{color:#0F2620}
+  .msg.asistente a{color:var(--jade);word-break:break-all}
+  .msg.error{border-color:var(--error);color:var(--error)}
+  .acciones{display:flex;gap:.4rem;margin-top:.7rem}
+  .acciones button{font:inherit;font-size:.82rem;background:none;border:1px solid var(--linea);
+    color:var(--suave);border-radius:999px;padding:.2rem .7rem;cursor:pointer}
+  .acciones button:hover{color:var(--dosel);border-color:var(--dosel)}
+  .pensando{display:flex;gap:6px;padding:.4rem 0}
+  .pensando i{width:9px;height:9px;border-radius:50%;background:var(--jade);animation:p 1s infinite}
+  .pensando i:nth-child(2){animation-delay:.15s}.pensando i:nth-child(3){animation-delay:.3s}
+  @keyframes p{0%,100%{opacity:.25;transform:translateY(0)}50%{opacity:1;transform:translateY(-4px)}}
+
+  /* ---------- Barra para escribir ---------- */
+  .barra{position:fixed;left:0;right:0;bottom:0;z-index:3;
+    background:linear-gradient(to top,var(--hoja) 70%,rgba(233,239,228,0));padding:1.2rem 1rem .7rem}
+  .caja{max-width:760px;margin:0 auto;display:flex;align-items:flex-end;gap:.5rem;
+    background:var(--papel);border:2px solid var(--dosel);border-radius:22px;padding:.4rem .4rem .4rem 1rem}
+  .caja textarea{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(--dosel);
+    font:inherit;line-height:1.45;max-height:140px;padding:.55rem 0}
+  .caja textarea::placeholder{color:#6F8A7F}
+  .btn-ico{flex:none;width:46px;height:46px;border-radius:16px;border:0;display:grid;place-items:center;cursor:pointer}
+  .btn-ico svg{width:22px;height:22px}
+  .btn-mic{background:var(--hoja-2);color:var(--dosel)}
+  .btn-mic.activo{background:var(--cacao);color:var(--dosel)}
+  .btn-enviar{background:var(--dosel);color:var(--papel)}
+  .btn-enviar:disabled{opacity:.35;cursor:default}
+  .pie{max-width:760px;margin:.45rem auto 0;text-align:center;font-size:.78rem;color:var(--suave)}
+
+  .aviso{position:fixed;left:50%;bottom:7.6rem;transform:translateX(-50%) translateY(10px);z-index:5;
+    background:var(--dosel);color:var(--papel);padding:.65rem 1rem;border-radius:12px;font-size:.92rem;
+    max-width:min(92vw,520px);opacity:0;pointer-events:none;transition:.25s}
+  .aviso.ver{opacity:1;transform:translateX(-50%)}
+
+  :focus-visible{outline:3px solid var(--cacao);outline-offset:2px}
+  .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  @media (max-width:520px){.titulo span{display:none}.voz-toggle span{display:none}}
+</style>
+</head>
+<body>
+
+<div class="relieve" aria-hidden="true">
+  <svg viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+    <g fill="none" stroke="#C6D8BF" stroke-width="1.2">
+      <path d="M-50 640 C 200 560, 330 690, 560 600 S 900 470, 1260 560"/>
+      <path d="M-50 680 C 210 600, 340 730, 570 640 S 910 510, 1260 600"/>
+      <path d="M-50 720 C 220 640, 350 770, 580 680 S 920 550, 1260 640"/>
+      <path d="M-50 760 C 230 680, 360 810, 590 720 S 930 590, 1260 680"/>
+      <path d="M980 120 c 90 -40 190 10 200 90 s -60 150 -150 140 s -150 -60 -140 -130 s 30 -80 90 -100z"/>
+      <path d="M995 145 c 70 -30 150 10 158 72 s -48 118 -118 110 s -118 -48 -110 -102 s 22 -62 70 -80z"/>
+      <path d="M1012 170 c 50 -20 108 8 114 52 s -34 84 -84 78 s -84 -34 -78 -72 s 16 -44 48 -58z"/>
+      <path d="M1030 196 c 28 -11 62 5 66 30 s -20 48 -48 45 s -48 -20 -45 -42 s 9 -25 27 -33z"/>
+      <path d="M-40 90 C 120 40, 240 140, 380 80 S 600 20, 700 60"/>
+      <path d="M-40 130 C 130 80, 250 180, 390 120 S 610 60, 710 100"/>
+    </g>
+  </svg>
+</div>
+
+<header>
+  <svg class="marca" viewBox="0 0 40 40" aria-hidden="true">
+    <circle cx="20" cy="20" r="19" fill="#16332B"/>
+    <path d="M20 8c7 5 9 13 4 21-2 3-6 4-8 3-5-6-3-17 4-24z" fill="#D99A1E"/>
+    <path d="M18.5 31c.5-7 1.5-13 4-19" stroke="#16332B" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  </svg>
+  <div class="titulo">
+    <b>Ventanilla Digital de Adquisiciones</b>
+    <span>El Colegio de la Frontera Sur, Unidad Tapachula</span>
+  </div>
+  <button class="voz-toggle" id="btnLeer" aria-pressed="false" title="Leer las respuestas en voz alta">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    <span>Leer respuestas</span>
+  </button>
+</header>
+
+<main id="app">
+  <section class="portada">
+    <button class="orbe" id="orbe" aria-label="Hablar: toca y di tu pregunta">
+      <svg class="anillos" viewBox="0 0 200 200" aria-hidden="true">
+        <path d="M100 6c52 0 93 40 94 92 1 55-42 96-96 96C46 194 7 152 6 101 5 47 48 6 100 6z"/>
+        <path d="M100 20c44 0 79 34 80 78 1 47-36 82-82 82-44 0-77-36-78-79-1-46 36-81 80-81z"/>
+        <path d="M101 34c37 0 66 28 66 65 0 39-30 68-68 67-36 0-64-30-64-66 0-38 29-66 66-66z"/>
+        <path d="M100 47c30 0 53 23 53 53 0 31-24 54-54 53-29 0-51-24-51-53 0-30 23-53 52-53z"/>
+        <path d="M100 58c24 0 42 19 42 42 0 24-19 42-43 42-23-1-41-19-41-42 0-24 19-42 42-42z"/>
+      </svg>
+      <span class="nucleo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </span>
+    </button>
+    <div class="orbe-etiqueta" id="orbeEtiqueta">Toca y habla, o escribe abajo</div>
+
+    <h1>¿Qué necesitas comprar o contratar?</h1>
+    <p>Requisiciones, documentos por tipo de trámite, formatos, claves del catálogo de materiales y CUCoP de la Unidad Tapachula.</p>
+
+    <div class="sugerencias" id="sugerencias">
+      <button>¿Qué documentos piden para contratar honorarios?</button>
+      <button>Busca la clave de matraz Erlenmeyer de 250 ml</button>
+      <button>¿Cuándo tengo que tramitar por Compras MX?</button>
+      <button>Redáctame una solicitud de pago anticipado</button>
+      <button>¿Qué partidas van en compra consolidada?</button>
+    </div>
+  </section>
+
+  <section class="conversacion" id="conversacion" aria-live="polite"></section>
+</main>
+
+<div class="barra">
+  <form class="caja" id="formulario">
+    <label for="entrada" class="sr">Escribe tu pregunta</label>
+    <textarea id="entrada" rows="1" placeholder="Escribe tu pregunta…" autocomplete="off"></textarea>
+    <button type="button" class="btn-ico btn-mic" id="btnMic" aria-label="Dictar por voz">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
+    <button type="submit" class="btn-ico btn-enviar" id="btnEnviar" aria-label="Enviar pregunta" disabled>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </button>
+  </form>
+  <div class="pie">Orientación automatizada del Área de Adquisiciones. Para trámites formales confirma con el área: bellanira.navarro@ecosur.mx</div>
+</div>
+
+<div class="aviso" id="aviso" role="status"></div>
+
+<script>
+/* ============================================================
+   CONFIGURACIÓN
+   - Dentro de Apps Script no se toca nada.
+   - Si alojas este archivo en otro sitio (GitHub Pages), pega aquí
+     la URL de tu aplicación web que termina en /exec
+   ============================================================ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbwQrHE9kr8d6mLyKVSk8EM0ncJlKg9XlEVARUWMLcv6T79WK2TRMo3EcMQ55YeNpvjtGg/exec';
+
+const $ = s => document.querySelector(s);
+const app = $('#app'), conv = $('#conversacion'), entrada = $('#entrada'),
+      btnEnviar = $('#btnEnviar'), btnMic = $('#btnMic'), orbe = $('#orbe'),
+      orbeEtiqueta = $('#orbeEtiqueta'), btnLeer = $('#btnLeer'), aviso = $('#aviso');
+const historial = [];
+let ocupado = false;
+
+/* ---------- utilidades ---------- */
+function mostrarAviso(t, ms = 4500){
+  aviso.textContent = t; aviso.classList.add('ver');
+  clearTimeout(mostrarAviso._t); mostrarAviso._t = setTimeout(() => aviso.classList.remove('ver'), ms);
+}
+function escapar(s){ return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function enLinea(s){
+  return escapar(s)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/(^|[\s(])\*(?!\s)(.+?)\*(?=[\s).,;:]|$)/g, '$1<em>$2</em>')
+    .replace(/(https?:\/\/[^\s<)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>')
+    .replace(/([\w.+-]+@[\w-]+\.[\w.]+)/g, '<a href="mailto:$1">$1</a>');
+}
+function markdown(md){
+  const lineas = md.replace(/\r/g,'').split('\n'); let html = '', lista = null, parrafo = [];
+  const cerrarP = () => { if (parrafo.length){ html += '<p>' + parrafo.map(enLinea).join('<br>') + '</p>'; parrafo = []; } };
+  const cerrarL = () => { if (lista){ html += '</' + lista + '>'; lista = null; } };
+  for (let l of lineas){
+    l = l.replace(/^#{1,6}\s+/, '');
+    const ul = l.match(/^\s*[-*•]\s+(.*)/), ol = l.match(/^\s*\d+[.)]\s+(.*)/);
+    if (ul || ol){
+      cerrarP(); const tipo = ul ? 'ul' : 'ol';
+      if (lista !== tipo){ cerrarL(); html += '<' + tipo + '>'; lista = tipo; }
+      html += '<li>' + enLinea((ul || ol)[1]) + '</li>';
+    } else if (!l.trim()){ cerrarP(); cerrarL(); }
+    else { cerrarL(); parrafo.push(l); }
+  }
+  cerrarP(); cerrarL(); return html;
+}
+function textoPlano(md){
+  return md.replace(/\*\*/g,'').replace(/^\s*[-*•]\s+/gm,'').replace(/https?:\/\/\S+/g,'el enlace')
+           .replace(/[#_`>|]/g,'').replace(/\n{2,}/g,'. ');
+}
+
+/* ---------- mensajes ---------- */
+function agregar(rol, contenido, esError){
+  app.classList.add('con-chat');
+  const d = document.createElement('div');
+  d.className = 'msg ' + rol + (esError ? ' error' : '');
+  if (rol === 'usuario') d.textContent = contenido;
+  else if (contenido === null) d.innerHTML = '<div class="pensando" aria-label="Buscando respuesta"><i></i><i></i><i></i></div>';
+  else pintarRespuesta(d, contenido, esError);
+  conv.appendChild(d);
+  d.scrollIntoView({behavior:'smooth', block:'end'});
+  return d;
+}
+function pintarRespuesta(d, texto, esError){
+  d.classList.toggle('error', !!esError);
+  d.innerHTML = markdown(texto);
+  if (esError) return;
+  const acc = document.createElement('div'); acc.className = 'acciones';
+  const copiar = document.createElement('button'); copiar.type = 'button'; copiar.textContent = 'Copiar';
+  copiar.onclick = () => { navigator.clipboard?.writeText(texto.replace(/\*\*/g,'')).then(() => mostrarAviso('Respuesta copiada')).catch(() => mostrarAviso('No se pudo copiar; selecciona el texto manualmente.')); };
+  const oir = document.createElement('button'); oir.type = 'button'; oir.textContent = 'Escuchar';
+  oir.onclick = () => hablar(texto, true);
+  acc.append(copiar, oir); d.appendChild(acc);
+}
+
+/* ---------- comunicación con el servidor ---------- */
+function consultar(pregunta){
+  const datos = { pregunta, historial: historial.slice(-6) };
+  if (typeof google !== 'undefined' && google.script && google.script.run){
+    return new Promise((ok, mal) => google.script.run.withSuccessHandler(ok).withFailureHandler(mal).responder(datos.pregunta, datos.historial));
+  }
+  if (!API_URL) return Promise.reject(new Error('Falta configurar API_URL'));
+  return fetch(API_URL, { method:'POST', body: JSON.stringify(datos) }).then(r => r.json());
+}
+
+async function enviar(pregunta){
+  pregunta = (pregunta || '').trim();
+  if (!pregunta || ocupado) return;
+  ocupado = true; detenerVoz();
+  entrada.value = ''; ajustar(); btnEnviar.disabled = true;
+  agregar('usuario', pregunta);
+  const burbuja = agregar('asistente', null);
+  try {
+    const r = await consultar(pregunta);
+    const texto = (r && r.respuesta) || 'No obtuve respuesta. Intenta de nuevo.';
+    pintarRespuesta(burbuja, texto, !(r && r.ok));
+    if (r && r.ok){
+      historial.push({rol:'usuario', texto:pregunta}, {rol:'asistente', texto});
+      if (btnLeer.getAttribute('aria-pressed') === 'true') hablar(texto);
+    }
+  } catch (e){
+    pintarRespuesta(burbuja, 'Sin conexión con la ventanilla. Revisa tu internet e intenta de nuevo.', true);
+  } finally {
+    ocupado = false; burbuja.scrollIntoView({behavior:'smooth', block:'end'}); entrada.focus();
+  }
+}
+
+/* ---------- caja de texto ---------- */
+function ajustar(){ entrada.style.height = 'auto'; entrada.style.height = Math.min(entrada.scrollHeight, 140) + 'px'; btnEnviar.disabled = !entrada.value.trim(); }
+entrada.addEventListener('input', ajustar);
+entrada.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviar(entrada.value); } });
+$('#formulario').addEventListener('submit', e => { e.preventDefault(); enviar(entrada.value); });
+$('#sugerencias').addEventListener('click', e => { if (e.target.tagName === 'BUTTON') enviar(e.target.textContent); });
+
+/* ---------- dictado por voz ---------- */
+const Reconocedor = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, escuchando = false, textoDictado = '';
+
+function iniciarDictado(){
+  if (escuchando){ rec && rec.stop(); return; }
+  if (!Reconocedor){ mostrarAviso('Este navegador no permite dictar. Usa Chrome, Edge o Safari, o escribe tu pregunta.'); return; }
+  detenerVoz();
+  rec = new Reconocedor();
+  rec.lang = 'es-MX'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+  textoDictado = '';
+  rec.onstart = () => { escuchando = true; estadoMic(true); };
+  rec.onresult = ev => {
+    let t = ''; for (const r of ev.results) t += r[0].transcript;
+    textoDictado = t; entrada.value = t; ajustar();
+    orbeEtiqueta.textContent = t || 'Te escucho…';
+  };
+  rec.onerror = ev => {
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed')
+      mostrarAviso('El micrófono está bloqueado en esta página. Permítelo en el candado de la barra de direcciones o escribe tu pregunta.', 7000);
+    else if (ev.error === 'no-speech') mostrarAviso('No escuché nada. Toca el micrófono e intenta de nuevo.');
+    else if (ev.error !== 'aborted') mostrarAviso('No se pudo usar el dictado (' + ev.error + '). Escribe tu pregunta.');
+  };
+  rec.onend = () => {
+    escuchando = false; estadoMic(false);
+    if (textoDictado.trim()) enviar(textoDictado);
+  };
+  try { rec.start(); } catch (e){ mostrarAviso('No se pudo iniciar el micrófono. Escribe tu pregunta.'); }
+}
+function estadoMic(on){
+  btnMic.classList.toggle('activo', on);
+  orbe.classList.toggle('escuchando', on);
+  btnMic.setAttribute('aria-label', on ? 'Detener dictado' : 'Dictar por voz');
+  orbeEtiqueta.textContent = on ? 'Te escucho…' : 'Toca y habla, o escribe abajo';
+}
+btnMic.addEventListener('click', iniciarDictado);
+orbe.addEventListener('click', iniciarDictado);
+
+/* ---------- lectura en voz alta ---------- */
+let vozES = null;
+function elegirVoz(){
+  const voces = speechSynthesis.getVoices();
+  vozES = voces.find(v => /es[-_]MX/i.test(v.lang)) || voces.find(v => /^es/i.test(v.lang)) || null;
+}
+if ('speechSynthesis' in window){ elegirVoz(); speechSynthesis.onvoiceschanged = elegirVoz; }
+function hablar(texto, forzar){
+  if (!('speechSynthesis' in window)){ if (forzar) mostrarAviso('Este navegador no puede leer en voz alta.'); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(textoPlano(texto));
+  u.lang = 'es-MX'; if (vozES) u.voice = vozES; u.rate = 1.02;
+  speechSynthesis.speak(u);
+}
+function detenerVoz(){ if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+btnLeer.addEventListener('click', () => {
+  const on = btnLeer.getAttribute('aria-pressed') !== 'true';
+  btnLeer.setAttribute('aria-pressed', String(on));
+  if (!on) detenerVoz();
+  mostrarAviso(on ? 'Leeré las respuestas en voz alta' : 'Lectura en voz alta desactivada', 2200);
+});
+</script>
+</body>
+</html>
